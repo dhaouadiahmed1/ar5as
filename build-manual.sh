@@ -60,7 +60,7 @@ echo "  lib resource sets: ${#LIB_FLATS[@]}"
 echo "== [3/8] aapt2 link =="
 # aapt2 needs a package attribute; inject it into a temp copy (the Gradle
 # build uses the namespace from build.gradle.kts instead, manifest unchanged).
-sed 's|<manifest |<manifest package="app.ar5as" android:versionCode="3" android:versionName="0.3" |' "$ROOT/app/src/main/AndroidManifest.xml" > "$BUILD/AndroidManifest.xml"
+sed 's|<manifest |<manifest package="app.ar5as" android:versionCode="4" android:versionName="0.3.1" |' "$ROOT/app/src/main/AndroidManifest.xml" > "$BUILD/AndroidManifest.xml"
 EXTRA_ARGS=()
 while IFS= read -r p; do
   [ -n "$p" ] && EXTRA_ARGS+=(--extra-packages "$p")

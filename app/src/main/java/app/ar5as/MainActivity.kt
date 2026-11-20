@@ -391,7 +391,7 @@ fun SpringCard(
 
 /** Staggered entrance: fades + rises in, delayed by index. */
 @Composable
-fun StaggerIn(index: Int, content: @Composable () -> Unit) {
+fun StaggerIn(index: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val alpha = remember { Animatable(0f) }
     val offsetY = remember { Animatable(28f) }
     LaunchedEffect(Unit) {
@@ -400,10 +400,11 @@ fun StaggerIn(index: Int, content: @Composable () -> Unit) {
         launch { offsetY.animateTo(0f, tween(380, easing = FastOutSlowInEasing)) }
     }
     Box(
-        Modifier.graphicsLayer {
-            this.alpha = alpha.value
-            translationY = offsetY.value
-        }
+        modifier
+            .graphicsLayer {
+                this.alpha = alpha.value
+                translationY = offsetY.value
+            }
     ) { content() }
 }
 
@@ -757,15 +758,18 @@ fun HomeScreen(
             val pair = pairs[rowIndex]
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 pair.forEachIndexed { colIndex, product ->
                     val cheap = cheapestPrice(store, product)
                     val promo = PROMOS.find { it.productId == product.id }
-                    StaggerIn((rowIndex * 2 + colIndex).coerceAtMost(8)) {
+                    // Weight must sit on the Row's direct child (the StaggerIn
+                    // Box), not on the Card inside it — otherwise the first
+                    // card measures full-width and the second gets 0 width.
+                    StaggerIn((rowIndex * 2 + colIndex).coerceAtMost(8), Modifier.weight(1f)) {
                         SpringCard(
                             onClick = { onOpenSheet(product.id) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Box {
                                 product.imageRes?.let { res ->
