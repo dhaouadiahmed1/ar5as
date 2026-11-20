@@ -1,6 +1,5 @@
 package app.ar5as.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -47,7 +46,9 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun Ar5asTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    // v0.2: always LIGHT, like the web preview — ignore the phone's dark mode.
+    // The dark palette stays defined below for a later version.
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColors else LightColors

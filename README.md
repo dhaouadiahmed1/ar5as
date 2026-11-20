@@ -1,11 +1,30 @@
-# Ar5as — أرخص v0.1
+# Ar5as — أرخص v0.2
 
 **Ar5as** (أرخص = "le moins cher") aide les Tunisiens à trouver les prix les plus bas
 et les promos des produits de tous les jours — et à tenir leur budget.
 
-- Package : `app.ar5as` — versionCode 1 / versionName **0.1**
+- Package : `app.ar5as` — versionCode 2 / versionName **0.2**
 - Kotlin + Jetpack Compose (Material3), minSdk 26
 - **100% hors-ligne, sans compte, sans pub, sans backend.**
+
+## Nouveautés v0.2 (2026-11-19)
+- **Thème clair forcé** — fond blanc, cartes blanches, vert #1B7A43 + ambre #FFB300,
+  comme l'exemple web approuvé (le mode sombre du téléphone est ignoré).
+- **Photos réelles des produits** — les 27 produits ont une vraie photo
+  (Pixabay, licence gratuite, images téléchargées et réduites à max 400px,
+  ~5–55 Ko chacune, embarquées dans l'app).
+  Miniatures 64dp dans Accueil + Comparer, grande photo dans la fiche produit,
+  miniature dans les cartes Promo, 48dp dans le Budget. Les produits ajoutés
+  par l'utilisateur affichent une icône générique (pas de photo).
+  > Stockage : les photos sont dans le repo en **base64 texte**
+  > (`app/images-b64/*.b64`) — le push snapshot de l'app GitHub de Muse
+  > n'accepte que des fichiers texte UTF-8, pas de JPG binaires.
+  > Elles sont décodées en JPG dans `res/drawable/` au moment du build
+  > (`scripts/decode_images.py`, tâche Gradle `decodeImages` sur `preBuild`,
+  > ou étape [1b/8] de `build-manual.sh`). Ne pas committer de JPG binaires
+  > dans `res/drawable/` — ils sont régénérés à chaque build.
+- **Bannière photo sur l'Accueil** — photo d'un étal de marché
+  (`res/drawable/hero_market.jpg`, Pixabay) avec le titre par-dessus.
 
 ## Ce que fait v0.1
 

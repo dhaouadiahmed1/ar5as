@@ -3,9 +3,11 @@ package app.ar5as
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,12 +60,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ar5as.R
 import app.ar5as.data.CATEGORIES
 import app.ar5as.data.DEFAULT_BASKET_IDS
 import app.ar5as.data.PROMOS
@@ -74,6 +80,7 @@ import app.ar5as.data.STORES
 import app.ar5as.data.cheapestPrice
 import app.ar5as.data.expensivePrice
 import app.ar5as.data.fmt
+import app.ar5as.data.photoResFor
 import app.ar5as.ui.theme.Ar5asAmber
 import app.ar5as.ui.theme.Ar5asGreen
 import app.ar5as.ui.theme.Ar5asTheme
@@ -176,6 +183,39 @@ fun Ar5asApp(store: PriceStore) {
 }
 
 // ---------------------------------------------------------------------------
+// Product photo thumbnail (v0.2, Pixabay photos bundled in the app).
+// Custom user products have no photo: show a generic basket icon instead.
+// ---------------------------------------------------------------------------
+@Composable
+fun ProductThumb(product: Product, size: Int) {
+    val res = product.imageRes
+    if (res != null) {
+        Image(
+            painter = painterResource(id = res),
+            contentDescription = product.nameAr,
+            modifier = Modifier
+                .size(size.dp)
+                .clip(RoundedCornerShape(12.dp)),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(size.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.ShoppingCart,
+                contentDescription = null,
+                tint = Ar5asGreen
+            )
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Accueil
 // ---------------------------------------------------------------------------
 @Composable
@@ -203,11 +243,42 @@ fun HomeScreen(
 
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text(
-                "وين أرخص؟ قارن قبل ما تشري",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            // v0.2 hero: real market photo banner, like the web preview.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.hero_market),
+                    contentDescription = "سوق",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f))
+                )
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(14.dp)
+                ) {
+                    Text(
+                        "وين أرخص؟",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
+                    )
+                    Text(
+                        "قارن قبل ما تشري",
+                        color = Color.White,
+                        fontSize = 15.sp
+                    )
+                }
+            }
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = query,
@@ -320,10 +391,11 @@ fun HomeScreen(
                     Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    ProductThumb(product, 64)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
                         Text(product.nameAr, fontWeight = FontWeight.Bold)
                         Text("${product.nameFr} • ${product.category}", fontSize = 12.sp)
                     }
@@ -411,10 +483,15 @@ fun CompareScreen(
                     Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(product.nameAr, fontWeight = FontWeight.Bold)
+                    ProductThumb(product, 64)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        product.nameAr,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
                     Text(
                         cheap?.let { "${fmt(it.second)} • ${it.first}" } ?: "—",
                         color = Ar5asGreen,
@@ -429,6 +506,18 @@ fun CompareScreen(
                 val exp = expensivePrice(store, selected)
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp)) {
+                        selected.imageRes?.let { res ->
+                            Image(
+                                painter = painterResource(id = res),
+                                contentDescription = selected.nameAr,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(160.dp)
+                                    .clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(Modifier.height(10.dp))
+                        }
                         Text(selected.nameAr, fontWeight = FontWeight.Bold, fontSize = 19.sp)
                         Text("${selected.nameFr} • ${selected.unit} • ${selected.category}", fontSize = 13.sp)
                         Spacer(Modifier.height(10.dp))
@@ -657,10 +746,20 @@ fun PromoScreen() {
                     Modifier
                         .fillMaxWidth()
                         .padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    photoResFor(promo.productId)?.let { res ->
+                        Image(
+                            painter = painterResource(id = res),
+                            contentDescription = promo.productAr,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(Modifier.width(10.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
                         Text(promo.productAr, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                         Text(promo.store, fontSize = 13.sp)
                         Text("حتى ${promo.ends}", fontSize = 12.sp)
@@ -763,6 +862,8 @@ fun BudgetScreen(store: PriceStore, products: List<Product>) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        ProductThumb(product, 48)
+                        Spacer(Modifier.width(8.dp))
                         Checkbox(
                             checked = qty > 0,
                             onCheckedChange = { checked ->

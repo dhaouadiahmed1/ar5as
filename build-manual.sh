@@ -6,8 +6,14 @@
 # project builds with ./gradlew on GitHub Actions (see .github/workflows).
 # This script does exactly what AGP does, step by step, with the same
 # compilers (kotlinc 2.0.0 + Compose compiler 2.0.0, aapt2, d8):
-#   resolve deps -> dedup -> aapt2 compile/link -> kotlinc -> javac (R.java)
+#   resolve deps -> dedup -> aapt2 compile/link -> javac (R.java) -> kotlinc
 #   -> d8 -> zipalign -> apksigner
+# NOTE (v0.2): javac runs BEFORE kotlinc so Kotlin code can reference R
+# (product photos); v0.1 had no R references in Kotlin.
+# NOTE (v0.2 push): photos live in the repo as base64 TEXT (app/images-b64/)
+# because the GitHub App snapshot push is text-only; they are decoded to
+# JPGs in res/drawable/ by scripts/decode_images.py (step [1b/8] below)
+# before aapt2 compiles the resources.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -37,6 +43,9 @@ mkdir -p "$GEN" "$CLASSES" "$DEX" "$BUILD/res-flat"
 CP="$(cat "$INPUTS/cp.txt"):$ANDROID_JAR"
 echo "  classpath jars: $(echo "$CP" | tr ':' '\n' | wc -l)"
 
+echo "== [1b/8] decode product photos (base64 text -> JPG drawables) =="
+python3 "$ROOT/scripts/decode_images.py" || { echo "decode_images failed"; exit 1; }
+
 echo "== [2/8] aapt2 compile (app + library resources) =="
 "$AAPT2" compile --dir "$ROOT/app/src/main/res" -o "$BUILD/res-flat/app.zip"
 i=0
@@ -51,7 +60,7 @@ echo "  lib resource sets: ${#LIB_FLATS[@]}"
 echo "== [3/8] aapt2 link =="
 # aapt2 needs a package attribute; inject it into a temp copy (the Gradle
 # build uses the namespace from build.gradle.kts instead, manifest unchanged).
-sed 's|<manifest |<manifest package="app.ar5as" android:versionCode="1" android:versionName="0.1" |' "$ROOT/app/src/main/AndroidManifest.xml" > "$BUILD/AndroidManifest.xml"
+sed 's|<manifest |<manifest package="app.ar5as" android:versionCode="2" android:versionName="0.2" |' "$ROOT/app/src/main/AndroidManifest.xml" > "$BUILD/AndroidManifest.xml"
 EXTRA_ARGS=()
 while IFS= read -r p; do
   [ -n "$p" ] && EXTRA_ARGS+=(--extra-packages "$p")
@@ -66,23 +75,23 @@ done < "$INPUTS/pkgs.txt"
   "$BUILD/res-flat/app.zip" "${LIB_FLATS[@]}"
 echo "  linked APK: $(du -h "$BUILD/app-unaligned.apk" | cut -f1)"
 
-echo "== [4/8] kotlinc (Compose) =="
-PLUGIN="$(ls "$DEPS"/*kotlin-compose-compiler-plugin__*.jar)"
-SOURCES="$(find "$ROOT/app/src/main/java" -name '*.kt')"
-# shellcheck disable=SC2086
-"$KOTLINC/bin/kotlinc" -jvm-target 17 \
-  -Xplugin="$PLUGIN" \
-  -cp "$CP" \
-  -d "$CLASSES" $SOURCES
-echo "  kotlin classes: $(find "$CLASSES" -name '*.class' | wc -l)"
-
-echo "== [5/8] javac (generated R.java) =="
+echo "== [4/8] javac (generated R.java) — FIRST, so kotlinc can resolve R =="
 R_JAVA="$(find "$GEN" -name '*.java')"
 if [ -n "$R_JAVA" ]; then
   # shellcheck disable=SC2086
   javac --release 17 -cp "$ANDROID_JAR" -d "$CLASSES" $R_JAVA
   echo "  R classes: $(find "$CLASSES" -name 'R*.class' | wc -l)"
 fi
+
+echo "== [5/8] kotlinc (Compose) =="
+PLUGIN="$(ls "$DEPS"/*kotlin-compose-compiler-plugin__*.jar)"
+SOURCES="$(find "$ROOT/app/src/main/java" -name '*.kt')"
+# shellcheck disable=SC2086
+"$KOTLINC/bin/kotlinc" -jvm-target 17 \
+  -Xplugin="$PLUGIN" \
+  -cp "$CP:$CLASSES" \
+  -d "$CLASSES" $SOURCES
+echo "  kotlin classes: $(find "$CLASSES" -name '*.class' | wc -l)"
 
 echo "== [6/8] d8 (dex) =="
 mapfile -t DEX_JARS < "$INPUTS/dex.txt"

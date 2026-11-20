@@ -2,6 +2,7 @@ package app.ar5as.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import app.ar5as.R
 
 // ---------------------------------------------------------------------------
 // Ar5as v0.1 — data
@@ -29,10 +30,13 @@ data class Product(
     val unit: String,
     val category: String,
     /** Price per store, in the STORES order. Null = no price for that store. */
-    val prices: Map<String, Double?>
+    val prices: Map<String, Double?>,
+    /** Bundled photo (Pixabay, v0.2). Null = no photo, show generic icon. */
+    val imageRes: Int? = null
 )
 
 data class Promo(
+    val productId: String,
     val productAr: String,
     val store: String,
     val oldPrice: Double,
@@ -55,8 +59,41 @@ private fun p(
         "Aziza" to aziza,
         "Magasin Général" to mg,
         "Souk" to souk
-    )
+    ),
+    photoResFor(id)
 )
+
+/** Bundled Pixabay photo per product id (v0.2). Null = no photo (generic icon). */
+fun photoResFor(id: String): Int? = when (id) {
+    "zit-nabati" -> R.drawable.prod_zit_nabati
+    "sokkor" -> R.drawable.prod_sokkor
+    "zit-zitouna" -> R.drawable.prod_zit_zitouna
+    "ma9rouna" -> R.drawable.prod_ma9rouna
+    "riz" -> R.drawable.prod_riz
+    "farina" -> R.drawable.prod_farina
+    "couscous" -> R.drawable.prod_couscous
+    "3das" -> R.drawable.prod_3das
+    "9ahwa" -> R.drawable.prod_9ahwa
+    "chay" -> R.drawable.prod_chay
+    "tmatem-m3ajna" -> R.drawable.prod_tmatem_m3ajna
+    "tmatem" -> R.drawable.prod_tmatem
+    "batata" -> R.drawable.prod_batata
+    "bsal" -> R.drawable.prod_bsal
+    "tfe7" -> R.drawable.prod_tfe7
+    "banan" -> R.drawable.prod_banan
+    "djej" -> R.drawable.prod_djej
+    "l7am-3alouch" -> R.drawable.prod_l7am_3alouch
+    "l7am-ba9ri" -> R.drawable.prod_l7am_ba9ri
+    "bidh" -> R.drawable.prod_bidh
+    "7lib" -> R.drawable.prod_7lib
+    "jben" -> R.drawable.prod_jben
+    "yaourt" -> R.drawable.prod_yaourt
+    "saboun" -> R.drawable.prod_saboun
+    "javel" -> R.drawable.prod_javel
+    "papier" -> R.drawable.prod_papier
+    "dentifrice" -> R.drawable.prod_dentifrice
+    else -> null
+}
 
 /** Seed catalogue — 27 products, indicative prices in DT. */
 val SEED_PRODUCTS: List<Product> = listOf(
@@ -97,14 +134,14 @@ val SEED_PRODUCTS: List<Product> = listOf(
 
 /** This week's promos — indicative examples, editable like any price. */
 val PROMOS: List<Promo> = listOf(
-    Promo("دجاج 1كغ", "Carrefour", 10.50, 8.90, "2026-11-30"),
-    Promo("مسحوق غسيل 1كغ", "Carrefour", 10.50, 8.50, "2026-12-03"),
-    Promo("قهوة 250غ", "Monoprix", 9.50, 7.90, "2026-12-01"),
-    Promo("روز 1كغ", "Magasin Général", 3.90, 3.30, "2026-11-30"),
-    Promo("زيت نباتي 1ل", "Aziza", 7.50, 6.90, "2026-11-29"),
-    Promo("حليب 1ل", "Aziza", 1.55, 1.40, "2026-11-28"),
-    Promo("بيض 30 حبة", "Souk", 13.00, 11.50, "2026-11-27"),
-    Promo("تفاح 1كغ", "Souk", 4.50, 3.80, "2026-11-26")
+    Promo("djej", "دجاج 1كغ", "Carrefour", 10.50, 8.90, "2026-11-30"),
+    Promo("saboun", "مسحوق غسيل 1كغ", "Carrefour", 10.50, 8.50, "2026-12-03"),
+    Promo("9ahwa", "قهوة 250غ", "Monoprix", 9.50, 7.90, "2026-12-01"),
+    Promo("riz", "روز 1كغ", "Magasin Général", 3.90, 3.30, "2026-11-30"),
+    Promo("zit-nabati", "زيت نباتي 1ل", "Aziza", 7.50, 6.90, "2026-11-29"),
+    Promo("7lib", "حليب 1ل", "Aziza", 1.55, 1.40, "2026-11-28"),
+    Promo("bidh", "بيض 30 حبة", "Souk", 13.00, 11.50, "2026-11-27"),
+    Promo("tfe7", "تفاح 1كغ", "Souk", 4.50, 3.80, "2026-11-26")
 )
 
 /** Default weekly basket shown on Accueil (10 staples). */
